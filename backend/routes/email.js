@@ -90,4 +90,16 @@ router.patch('/:id/deactivate', async (req, res) => {
   }
 });
 
+// Reactivate subscription
+router.patch('/:id/activate', async (req, res) => {
+  try {
+    const alert = await EmailAlert.findByPk(req.params.id);
+    if (!alert) return res.status(404).json({ error: 'Not found' });
+    await alert.update({ isActive: true });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

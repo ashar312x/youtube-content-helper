@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Lightbulb, RefreshCw, Trash2, CheckCircle, Youtube } from 'lucide-react';
 import { ideasAPI } from '../services/api';
+import { useApp } from '../context/AppContext';
 import toast from 'react-hot-toast';
 
 const STATUS_OPTIONS = ['idea', 'scripting', 'filming', 'editing', 'published'];
@@ -19,7 +20,8 @@ const DIFFICULTY_COLORS = {
 };
 
 export default function IdeasPage() {
-  const [channelName, setChannelName] = useState('');
+  const { selectedChannel } = useApp();
+  const [channelName, setChannelName] = useState(selectedChannel || '');
   const [ideas, setIdeas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);

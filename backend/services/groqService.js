@@ -94,4 +94,129 @@ Keep it under 300 words. Include emojis. Make it feel personal and exciting. Ret
   return response.choices[0].message.content.trim();
 }
 
-module.exports = { generateContent, generateVideoIdeas, generateEmailSummary };
+async function generateTitleVariants(channelName, topic = '') {
+  const topicPart = topic ? ` about "${topic}"` : '';
+  const prompt = `Generate 5 YouTube video titles for the channel "${channelName}"${topicPart}.
+
+Use exactly these 5 styles (one per title):
+1. Curiosity gap — intrigue without revealing everything
+2. Listicle — use a specific number
+3. Controversy/Bold claim — challenge conventional wisdom
+4. How-to — direct actionable value promise
+5. Emotional/Story — personal angle with emotional hook
+
+Return valid JSON only: {"titles": ["title1","title2","title3","title4","title5"], "styles": ["curiosity","listicle","controversy","how-to","emotional"]}`;
+
+  const response = await groq.chat.completions.create({
+    model: MODEL,
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.9,
+    max_tokens: 600,
+  });
+
+  const raw = response.choices[0].message.content.trim();
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('Failed to parse AI response');
+  return JSON.parse(jsonMatch[0]);
+}
+
+async function generateThumbnailBriefs(titles, channelName) {
+  const titlesText = titles.map((t, i) => `${i + 1}. ${t}`).join('\n');
+
+  const prompt = `You are a YouTube thumbnail expert. For the channel "${channelName}", create a high-CTR thumbnail brief for each title.
+
+Titles:
+${titlesText}
+
+Return valid JSON only:
+{
+  "briefs": [
+    {
+      "title": "the title",
+      "overlayText": "Max 5 words for text overlay (high contrast)",
+      "visualConcept": "Scene/background description for CapCut AI generator",
+      "emotionHook": "Facial expression or reaction if a person is shown",
+      "colorPalette": ["#hex1", "#hex2", "#hex3"],
+      "capCutTip": "Specific CapCut template, effect, or style recommendation"
+    }
+  ]
+}`;
+
+  const response = await groq.chat.completions.create({
+    model: MODEL,
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7,
+    max_tokens: 2000,
+  });
+
+  const raw = response.choices[0].message.content.trim();
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('Failed to parse AI response');
+  return JSON.parse(jsonMatch[0]);
+}
+
+async function generateTrendingSuggestions(niche) {
+  const prompt = `You are a YouTube trend analyst. Generate 10 trending video topic ideas for a "${niche}" YouTube channel.
+
+Explain WHY each topic is trending right now and what unique angle to take.
+
+Return valid JSON only:
+{
+  "topics": [
+    {
+      "title": "Specific video topic title",
+      "trendReason": "Why this is hot right now (1-2 sentences)",
+      "angle": "Unique angle to stand out from competing videos",
+      "interestLevel": "high|medium|rising",
+      "format": "Long-form|Shorts|Both"
+    }
+  ]
+}`;
+
+  const response = await groq.chat.completions.create({
+    model: MODEL,
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.85,
+    max_tokens: 2500,
+  });
+
+  const raw = response.choices[0].message.content.trim();
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('Failed to parse AI response');
+  return JSON.parse(jsonMatch[0]);
+}
+
+async function generateVoiceoverScript(channelName, topic, description) {
+  const topicPart = topic ? ` about "${topic}"` : '';
+  const prompt = `Write a natural spoken voiceover script for a YouTube video by the channel "${channelName}"${topicPart}.
+
+Context/description: ${description || 'General YouTube content'}
+
+Requirements:
+- Natural conversational language — no timestamps, no bullet points
+- Mark natural pauses with [PAUSE]
+- Mark emphasis words with *word*
+- Target length: 8-12 minutes when spoken at 130 wpm (~1100-1600 words)
+- Structure: Hook intro (30s) → 3-4 main sections with clear transitions → verbal CTAs → outro
+
+Return only the script text. No JSON, no headers, no labels.`;
+
+  const response = await groq.chat.completions.create({
+    model: MODEL,
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7,
+    max_tokens: 3000,
+  });
+
+  return response.choices[0].message.content.trim();
+}
+
+module.exports = {
+  generateContent,
+  generateVideoIdeas,
+  generateEmailSummary,
+  generateTitleVariants,
+  generateThumbnailBriefs,
+  generateTrendingSuggestions,
+  generateVoiceoverScript,
+};

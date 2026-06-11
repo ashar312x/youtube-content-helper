@@ -1,11 +1,120 @@
 import { useState } from 'react';
-import { Settings, Mail, Bell, Youtube, Zap, ExternalLink } from 'lucide-react';
+import { Settings, Mail, Bell, Youtube, Zap, ExternalLink, Users, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react';
 import { emailAPI } from '../services/api';
+import { useApp } from '../context/AppContext';
 import toast from 'react-hot-toast';
 
+function SubscriptionManager() {
+  const { selectedChannel } = useApp();
+  const [lookupChannel, setLookupChannel] = useState(selectedChannel || '');
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [toggling, setToggling] = useState({});
+
+  const load = async () => {
+    if (!lookupChannel.trim()) return;
+    setLoading(true);
+    try {
+      const res = await emailAPI.subscriptions(lookupChannel);
+      setSubscriptions(res.data || []);
+    } catch {
+      toast.error('Failed to load subscriptions');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggle = async (sub) => {
+    setToggling((p) => ({ ...p, [sub.id]: true }));
+    try {
+      if (sub.isActive) {
+        await emailAPI.deactivate(sub.id);
+      } else {
+        await emailAPI.reactivate(sub.id);
+      }
+      setSubscriptions((prev) =>
+        prev.map((s) => (s.id === sub.id ? { ...s, isActive: !s.isActive } : s))
+      );
+      toast.success(sub.isActive ? 'Deactivated' : 'Reactivated');
+    } catch {
+      toast.error('Failed to update');
+    } finally {
+      setToggling((p) => ({ ...p, [sub.id]: false }));
+    }
+  };
+
+  return (
+    <div className="card p-6">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-9 h-9 bg-purple-600/20 rounded-lg flex items-center justify-center">
+          <Users className="w-5 h-5 text-purple-400" />
+        </div>
+        <div>
+          <h2 className="font-semibold">Manage Subscriptions</h2>
+          <p className="text-xs text-gray-400">View and toggle active email alert subscriptions</p>
+        </div>
+      </div>
+
+      <div className="flex gap-3 mb-4">
+        <input
+          type="text"
+          value={lookupChannel}
+          onChange={(e) => setLookupChannel(e.target.value)}
+          placeholder="Channel name..."
+          className="input flex-1 text-sm"
+          onKeyDown={(e) => e.key === 'Enter' && load()}
+        />
+        <button onClick={load} disabled={loading} className="btn-secondary flex items-center gap-1.5 text-sm">
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
+          Load
+        </button>
+      </div>
+
+      {subscriptions.length === 0 && !loading ? (
+        <p className="text-sm text-gray-500 text-center py-4">No subscriptions found for this channel</p>
+      ) : (
+        <div className="space-y-2">
+          {subscriptions.map((sub) => (
+            <div key={sub.id} className="flex items-center justify-between bg-yt-border/50 rounded-lg px-3 py-2.5">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{sub.email}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-xs text-gray-500 capitalize">{sub.frequency}</span>
+                  <span className="text-gray-700">·</span>
+                  <span className="text-xs text-gray-500 capitalize">{sub.alertType}</span>
+                  {sub.lastSentAt && (
+                    <>
+                      <span className="text-gray-700">·</span>
+                      <span className="text-xs text-gray-600">
+                        Last sent {new Date(sub.lastSentAt).toLocaleDateString()}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => toggle(sub)}
+                disabled={toggling[sub.id]}
+                className={`shrink-0 transition-colors ${sub.isActive ? 'text-green-400 hover:text-red-400' : 'text-gray-600 hover:text-green-400'}`}
+              >
+                {toggling[sub.id]
+                  ? <Loader2 className="w-5 h-5 animate-spin" />
+                  : sub.isActive
+                    ? <ToggleRight className="w-6 h-6" />
+                    : <ToggleLeft className="w-6 h-6" />}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
+  const { selectedChannel } = useApp();
   const [email, setEmail] = useState('');
-  const [channelName, setChannelName] = useState('');
+  const [channelName, setChannelName] = useState(selectedChannel || '');
   const [frequency, setFrequency] = useState('daily');
   const [loading, setLoading] = useState(false);
   const [testLoading, setTestLoading] = useState(false);
@@ -100,6 +209,9 @@ export default function SettingsPage() {
           </div>
         </form>
       </div>
+
+      {/* Subscription Manager */}
+      <SubscriptionManager />
 
       {/* YouTube Automation Roadmap */}
       <div className="card p-6">

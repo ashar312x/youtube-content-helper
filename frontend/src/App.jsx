@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import IdeasPage from './pages/IdeasPage';
 import HistoryPage from './pages/HistoryPage';
 import SettingsPage from './pages/SettingsPage';
+import ChannelsPage from './pages/ChannelsPage';
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/channels" element={<ChannelsPage />} />
           <Route path="/ideas" element={<IdeasPage />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/settings" element={<SettingsPage />} />

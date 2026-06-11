@@ -48,6 +48,16 @@ const GeneratedContent = sequelize.define('GeneratedContent', {
     allowNull: true,
     field: 'video_ideas',
   },
+  thumbnailBriefs: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    field: 'thumbnail_briefs',
+  },
+  voiceoverScript: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'voiceover_script',
+  },
 }, {
   tableName: 'generated_content',
   timestamps: true,

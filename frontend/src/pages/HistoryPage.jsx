@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { History, ChevronDown, ChevronUp, Trash2, Copy, Check } from 'lucide-react';
 import { contentAPI } from '../services/api';
+import { useApp } from '../context/AppContext';
 import toast from 'react-hot-toast';
 
 function HistoryCard({ record, onDelete }) {
@@ -9,13 +10,28 @@ function HistoryCard({ record, onDelete }) {
 
   const copyAll = () => {
     const text = [
-      `TITLE: ${(record.titles || [])[0] || ''}`,
-      `\nDESCRIPTION:\n${record.description}`,
-      `\nHASHTAGS:\n${(record.hashtags || []).join(' ')}`,
+      `=== YOUTUBE CONTENT PACKAGE ===`,
+      `Channel: ${record.channelName}`,
+      record.topic ? `Topic: ${record.topic}` : '',
+      ``,
+      `--- CAPCUT PROMPT ---`,
+      record.platformPrompts?.capcut || '',
+      ``,
+      `--- REEL SCRIPT ---`,
+      record.reelScript || '',
+      ``,
+      `--- TITLES ---`,
+      ...(record.titles || []).map((t, i) => `${i + 1}. ${t}`),
+      ``,
+      `--- DESCRIPTION ---`,
+      record.description || '',
+      ``,
+      `--- HASHTAGS ---`,
+      (record.hashtags || []).join(' '),
     ].join('\n');
     navigator.clipboard.writeText(text);
     setCopied(true);
-    toast.success('Copied to clipboard!');
+    toast.success('Full package copied!');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -84,7 +100,8 @@ function HistoryCard({ record, onDelete }) {
 }
 
 export default function HistoryPage() {
-  const [channelName, setChannelName] = useState('');
+  const { selectedChannel } = useApp();
+  const [channelName, setChannelName] = useState(selectedChannel || '');
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
 

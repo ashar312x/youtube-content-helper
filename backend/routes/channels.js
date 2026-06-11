@@ -43,6 +43,18 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+router.put('/:id', async (req, res) => {
+  try {
+    const { name, niche, description } = req.body;
+    const channel = await Channel.findByPk(req.params.id);
+    if (!channel) return res.status(404).json({ error: 'Not found' });
+    await channel.update({ ...(name && { name }), niche, description });
+    res.json({ success: true, data: channel });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.delete('/:id', async (req, res) => {
   try {
     const channel = await Channel.findByPk(req.params.id);
